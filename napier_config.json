@@ -1,0 +1,55 @@
+{
+  "mcpServers": {
+    "playwright": {
+      "command": "docker",
+      "args": [
+        "run", "-i", "--rm", "--init", "mcp/playwright"
+      ]
+    },
+    "whatsapp": {
+      "command": "docker",
+      "args": [
+        "run", "-i", "--rm", "--init", "mcp/whatsapp-bridge"
+      ]
+    },
+    "razorpay": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "--init",
+        "-e", "RAZORPAY_KEY_ID",
+        "-e", "RAZORPAY_KEY_SECRET",
+        "mcp/razorpay-mcp-server"
+      ],
+      "env": {
+        "RAZORPAY_KEY_ID": "${input:razorpay_key_id}",
+        "RAZORPAY_KEY_SECRET": "${input:razorpay_key_secret}"
+      }
+    }
+  },
+  "inputs": [
+    {
+      "type": "promptString",
+      "id": "razorpay_key_id",
+      "description": "Razorpay Key ID",
+      "password": false
+    },
+    {
+      "type": "promptString",
+      "id": "razorpay_key_secret",
+      "description": "Razorpay Key Secret",
+      "password": true
+    }
+  ],
+  "defaults": {
+    "server": "playwright"
+  },
+  "napier": {
+    "model": "gemini-2.0-flash",
+    "api_config": {
+      "temperature": 0.2
+    }
+  }
+}

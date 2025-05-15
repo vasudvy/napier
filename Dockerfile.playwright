@@ -1,0 +1,9 @@
+FROM mcr.microsoft.com/playwright:v1.43.1
+
+WORKDIR /app
+
+# Install MCP directly (no need for package.json)
+RUN npm install @playwright/mcp
+
+# Run MCP server by default
+CMD ["npx", "@playwright/mcp"]
