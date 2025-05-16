@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Napier Web Interface</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.1/socket.io.min.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto p-4">
+        <header class="py-6">
+            <h1 class="text-3xl font-bold text-center text-blue-600">Napier AI Browser Assistant</h1>
+            <p class="text-center text-gray-600 mt-2">Powered by Google's Gemini and Playwright</p>
+        </header>
+
+        <main class="mt-8 bg-white rounded-lg shadow-lg p-6">
+            <div class="mb-6">
+                <label for="query" class="block text-sm font-medium text-gray-700 mb-2">Enter your query</label>
+                <div class="flex">
+                    <textarea 
+                        id="query" 
+                        class="flex-1 p-3 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                        rows="3"
+                        placeholder="e.g. 'Browse to https://news.ycombinator.com and summarize the top 5 posts'"
+                    ></textarea>
+                    <button 
+                        id="submitBtn" 
+                        class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-r-lg transition"
+                    >
+                        Send
+                    </button>
+                </div>
+            </div>
+
+            <div class="mt-10">
+                <h2 class="text-xl font-semibold mb-4 border-b pb-2">Results</h2>
+                
+                <div id="statusBar" class="mb-4 hidden">
+                    <div class="flex items-center">
+                        <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500 mr-2"></div>
+                        <span id="statusText" class="text-sm text-gray-600">Processing...</span>
+                    </div>
+                </div>
+                
+                <div id="output" class="border rounded-lg p-4 bg-gray-50 min-h-[200px] overflow-auto whitespace-pre-wrap">
+                    <p class="text-gray-500 italic">Results will appear here...</p>
+                </div>
+            </div>
+
+            <div class="mt-8">
+                <h3 class="text-lg font-semibold mb-2">Example Queries</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div class="example-query p-3 bg-blue-50 rounded cursor-pointer hover:bg-blue-100 transition">
+                        Browse to https://example.com and take a screenshot
+                    </div>
+                    <div class="example-query p-3 bg-blue-50 rounded cursor-pointer hover:bg-blue-100 transition">
+                        Visit https://news.ycombinator.com and summarize the top 3 posts
+                    </div>
+                    <div class="example-query p-3 bg-blue-50 rounded cursor-pointer hover:bg-blue-100 transition">
+                        Go to https://en.wikipedia.org/wiki/Artificial_intelligence and extract the introduction
+                    </div>
+                    <div class="example-query p-3 bg-blue-50 rounded cursor-pointer hover:bg-blue-100 transition">
+                        Search for "climate change news" and summarize the top results
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="mt-8 text-center text-gray-500 text-sm py-4">
+            <p>Napier AI Browser Assistant &copy; 2025</p>
+        </footer>
+    </div>
+
+    <script>
+        // Connect to Socket.IO server
+        const socket = io();
+        
+        // DOM Elements
+        const queryInput = document.getElementById('query');
+        const submitBtn = document.getElementById('submitBtn');
+        const outputDiv = document.getElementById('output');
+        const statusBar = document.getElementById('statusBar');
+        const statusText = document.getElementById('statusText');
+        const exampleQueries = document.querySelectorAll('.example-query');
+
+        // Event listeners
+        submitBtn.addEventListener('click', sendQuery);
+        queryInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && e.ctrlKey) {
+                sendQuery();
+            }
+        });
+
+        // Example queries
+        exampleQueries.forEach(example => {
+            example.addEventListener('click', () => {
+                queryInput.value = example.textContent.trim();
+                queryInput.focus();
+            });
+        });
+
+        // Socket events
+        socket.on('connect', () => {
+            console.log('Connected to server');
+        });
+
+        socket.on('napier:ack', (data) => {
+            statusBar.classList.remove('hidden');
+            statusText.textContent = data.message;
+            outputDiv.innerHTML = '<p class="text-gray-500">Processing your query...</p>';
+        });
+
+        socket.on('napier:progress', (data) => {
+            // Append new data to output
+            if (outputDiv.innerHTML.includes('Processing your query...')) {
+                outputDiv.innerHTML = '';
+            }
+            outputDiv.innerHTML += data.output;
+            // Auto-scroll to bottom
+            outputDiv.scrollTop = outputDiv.scrollHeight;
+        });
+
+        socket.on('napier:response', (data) => {
+            statusBar.classList.add('hidden');
+        });
+
+        socket.on('napier:error', (data) => {
+            statusBar.classList.add('hidden');
+            outputDiv.innerHTML += `<p class="text-red-500">Error: ${data.error}</p>`;
+        });
+
+        function sendQuery() {
+            const query = queryInput.value.trim();
+            if (!query) return;
+
+            // Show status
+            statusBar.classList.remove('hidden');
+            statusText.textContent = 'Sending query...';
+            
+            // Emit the query event
+            socket.emit('napier:query', { query });
+        }
+    </script>
+</body>
+</html>

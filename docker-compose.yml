@@ -1,4 +1,3 @@
-version: '3.8'
 
 services:
   napier:
@@ -20,6 +19,19 @@ services:
       dockerfile: Dockerfile.playwright
     networks:
       - napier-network
+
+  web-interface:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    ports:
+      - "3000:3000"
+    environment:
+      - NAPIER_HOST=napier
+    networks:
+      - napier-network
+    depends_on:
+      - napier
 
 networks:
   napier-network:
