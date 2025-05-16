@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  napier:
+    build:
+      context: .
+      dockerfile: Dockerfile.napier
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    networks:
+      - napier-network
+    depends_on:
+      - playwright-mcp
+
+  playwright-mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile.playwright
+    networks:
+      - napier-network
+
+networks:
+  napier-network:
+    driver: bridge

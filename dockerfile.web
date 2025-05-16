@@ -1,0 +1,17 @@
+FROM node:16-alpine
+
+WORKDIR /app
+
+# Create a simple Express server to proxy requests to Napier
+RUN npm init -y && \
+    npm install express cors axios socket.io
+
+# Copy web application files
+COPY index.js .
+COPY public ./public
+
+# Expose the web interface port
+EXPOSE 3000
+
+# Start the web server
+CMD ["node", "index.js"]
